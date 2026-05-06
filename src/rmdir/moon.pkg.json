@@ -1,8 +1,8 @@
 {
   "is-main": true,
   "import": [
-    "Yoorkin/ArgParser",
-    "moonbitlang/x/fs",
-    "moonbitlang/x/sys"
+    "moonbitlang/core/argparse",
+    "moonbitlang/core/queue",
+    "moonbitlang/x/fs"
   ]
 }

@@ -1,38 +1,21 @@
-
-/// COPY FROM lijunchen/unstable_io/io/lib.wasm-gc.mbt
-/// Licensed under the Apache License, Version 2.0 (the "License");
-/// you may not use this file except in compliance with the License.
-/// You may obtain a copy of the License at
-///
-///     http://www.apache.org/licenses/LICENSE-2.0
-///
-/// Unless required by applicable law or agreed to in writing, software
-/// distributed under the License is distributed on an "AS IS" BASIS,
-/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-/// See the License for the specific language governing permissions and
-/// limitations under the License.
-fn __read_char() -> Int = "__moonbit_io_unstable" "read_char"
-
-
+///|
 fn char_from_int(val : Int) -> Char? = "%char_from_int"
 
-/// Reads a single character from standard input.
-///
-/// # Returns
-/// An optional character. Returns `None` if EOF is reached.
+///|
 pub fn read_char() -> Char? {
   char_from_int(__read_char())
 }
 
+///|
 pub fn read_line_from_stdin() -> String? {
   let buf = @buffer.new()
   while true {
-    let c = read_char()
-    match c {
-      None => match @buffer.to_unchecked_string(buf) { // FIX BUG: if read EOF, return buffer content
-        "" => return None
-        s => return Some(s)
-      }
+    match read_char() {
+      None =>
+        match buf.to_string() {
+          "" => return None
+          s => return Some(s)
+        }
       Some('\n') => {
         buf.write_char('\n')
         break
@@ -40,14 +23,10 @@ pub fn read_line_from_stdin() -> String? {
       Some(c) => buf.write_char(c)
     }
   }
-  Some(@buffer.to_unchecked_string(buf))
+  Some(buf.to_string())
 }
-/// END COPY
 
-
-
-
-
+///|
 struct Stats {
   lines : Int?
   words : Int?
@@ -56,73 +35,82 @@ struct Stats {
   max_line_length : Int?
 }
 
-
+///|
 fn Stats::to_strings(self : Stats) -> Array[String] {
-  let list = [
-    self.lines,
-    self.words,
-    self.characters,
-    self.bytes,
-    self.max_line_length,
-  ]
-  list
-    .iter()
-    .map(
-      fn(x) {
-        match x {
-          Some(n) => n.to_string()
-          None => ""
-        }
-      },
-    )
-    .collect()
+  [self.lines, self.words, self.characters, self.bytes, self.max_line_length]
+  .iter()
+  .map(fn(x) {
+    match x {
+      Some(n) => n.to_string()
+      None => ""
+    }
+  })
+  .to_array()
 }
 
-
+///|
 fn Stats::to_string(self : Stats) -> String {
-  @string.concat(self.to_strings().filter(fn(x) { x.length() > 0 }), separator=" ")
+  self.to_strings().filter(x => x.length() > 0).join(" ")
 }
-fn print_stats(list : @queue.T[(Stats, String)], total_stats : Stats) -> Unit {
-  if (list.is_empty()) {
+
+///|
+fn print_stats(
+  list : @queue.Queue[(Stats, String)],
+  total_stats : Stats,
+) -> Unit {
+  if list.is_empty() {
     println("wc: print stats error: list is empty")
+    return
   }
-  // let max_file_length = list.iter().map(fn(pair) {pair.1.length()}).fold(fn(a: Int, b: Int) {if a > b {a} else {b}}, init=0)
-  let fix_length = [match total_stats.lines {
-    None => 0
-    Some(x) => x.to_string().length()
-  }, match total_stats.words {
-    None => 0
-    Some(x) => x.to_string().length()
-  }, match total_stats.characters {
-    None => 0
-    Some(x) => x.to_string().length()
-  }, match total_stats.bytes {
-    None => 0
-    Some(x) => x.to_string().length()
-  }, match total_stats.max_line_length {
-    None => 0
-    Some(x) => x.to_string().length()
-  }]
-  list.each(fn (item: (Stats, String)) {
+
+  let fix_length = [
+    match total_stats.lines {
+      None => 0
+      Some(x) => x.to_string().length()
+    },
+    match total_stats.words {
+      None => 0
+      Some(x) => x.to_string().length()
+    },
+    match total_stats.characters {
+      None => 0
+      Some(x) => x.to_string().length()
+    },
+    match total_stats.bytes {
+      None => 0
+      Some(x) => x.to_string().length()
+    },
+    match total_stats.max_line_length {
+      None => 0
+      Some(x) => x.to_string().length()
+    },
+  ]
+
+  list.each(fn(item : (Stats, String)) {
     let (stats, file) = item
     let strings = stats.to_strings()
-    let output = @queue.new()
-    for i = 0; i < fix_length.length(); i = i + 1 {
+    let output : @queue.Queue[String] = @queue.new()
+    let mut i = 0
+    while i < fix_length.length() {
       if fix_length[i] > 0 && strings[i].length() > 0 {
-        let whitespace = fix_length[i] + 1 - strings[i].length() 
-        for j = 0; j < whitespace; j = j + 1 {
+        let whitespace = fix_length[i] + 1 - strings[i].length()
+        let mut j = 0
+        while j < whitespace {
           output.push(" ")
+          j = j + 1
         }
         output.push(strings[i])
       }
+      i = i + 1
     }
     output.push(" ")
     output.push(file)
-    println(@string.concat(output.iter().collect(), separator=""))
+    println(output.iter().to_array().join(""))
   })
 }
 
-fn Stats::op_add(self : Stats, other : Stats) -> Stats {
+///|
+fn Stats::add(self : Stats, other : Stats) -> Stats {
   fn option_add(x : Int?, y : Int?) -> Int? {
     match (x, y) {
       (None, _) => y
@@ -148,40 +136,42 @@ fn Stats::op_add(self : Stats, other : Stats) -> Stats {
   }
 }
 
-fn getopts(args: Array[String]) -> Array[String] {
-  let list = @queue.new()
-  for arg in args[2:] {
-    if arg.starts_with("-") && arg.length() > 2 && not(arg.starts_with("--")) {
-      for i = 1; i < arg.length(); i = i + 1 {
-        list.push("-" + arg[i].to_string())
-      }
-    } else {
-      list.push(arg)
-    }
-  }
-
-  return list.iter().collect()
-}
-
+///|
 fn word_count(
   content : String,
-  file_bytes: Bytes?,
+  file_bytes : Bytes?,
   line~ : Bool,
   word~ : Bool,
   char~ : Bool,
   byte~ : Bool,
-  max_line_length~ : Bool
+  max_line_length~ : Bool,
 ) -> Stats {
   let lines = if line { Some(content.split("\n").count()) } else { None }
-  let words = if word { Some(content.replace_all(old="\n", new=" ").split(" ").filter(fn(s) {s.length() > 0}).count()) } else { None }
+  let words = if word {
+    Some(
+      content
+      .replace_all(old="\n", new=" ")
+      .split(" ")
+      .filter(s => s.length() > 0)
+      .count(),
+    )
+  } else {
+    None
+  }
   let characters = if char { Some(content.length()) } else { None }
-  let bytes = if byte { Some(file_bytes.unwrap().length()) } else { None } 
-
+  let bytes = if byte {
+    match file_bytes {
+      Some(bytes) => Some(bytes.length())
+      None => Some(@utf8.encode(content).length())
+    }
+  } else {
+    None
+  }
   let max_line_length = if max_line_length {
     Some(
       content
       .split("\n")
-      .map(fn(line) { line.length() })
+      .map(line => line.length())
       .fold(fn(a : Int, b : Int) { if a > b { a } else { b } }, init=0),
     )
   } else {
@@ -190,93 +180,150 @@ fn word_count(
   { lines, words, characters, bytes, max_line_length }
 }
 
-fn main {
-  let args = getopts(@sys.get_cli_args())
-  let line_ref = @ref.new(false) // -l: 统计行数
-  let word_ref = @ref.new(false) // -w: 统计单词数
-  let char_ref = @ref.new(false) // -m: 统计字符数
-  let byte_ref = @ref.new(false) // -c: 统计字节数
-  let max_line_length_ref = @ref.new(false) // -L: 统计最长行长度
-  let help_flag = @ref.new(false) // --help: 显示帮助
-  let version_flag = @ref.new(false) // --version: 显示版本信息
-  let files : @queue.T[String] = @queue.new()
-  let usage =
-    #| wc - Print newline, word, and byte counts for each FILE, and a total line if
-    #| more than one FILE is specified.  A word is a non-zero-length sequence of
-    #| characters delimited by white space.
-    #| usage: 
-    #|      wc [OPTION]... [FILE]...
-    #| options:
-    #|      -c, --bytes            print the byte counts
-    #|      -m, --chars            print the character counts
-    #|      -l, --lines            print the newline counts
-    #|      -L, --max-line-length  print the maximum display width
-    #|      -w, --words            print the word counts
-    #|      -h, --help             display this help and exit
-    #|      -v, --version          output version information and exit
-    #|
-  @ArgParser.parse(
-    [
-      ("-l", "--lines", Set(line_ref), "print the newline counts"),
-      ("-w", "--words", Set(word_ref), "print the word counts"),
-      ("-m", "--chars", Set(char_ref), "print the character counts"),
-      ("-c", "--bytes", Set(byte_ref), "print the byte counts"),
-      (
-        "-L",
-        "--max-line-length",
-        Set(max_line_length_ref),
-        "print the maximum display width",
+///|
+fn count_file(
+  file : String,
+  line : Bool,
+  word : Bool,
+  char_count : Bool,
+  byte : Bool,
+  max_line_length : Bool,
+) -> Stats? {
+  if !@fs.path_exists(file) {
+    println("wc: \{file}: No such file or directory")
+    return None
+  }
+
+  let content = try @fs.read_file_to_string(file) catch {
+    _ => {
+      println("wc: \{file}: meet a error when read file")
+      return None
+    }
+  } noraise {
+    s => s
+  }
+
+  let bytes = if byte {
+    try @fs.read_file_to_bytes(file) catch {
+      _ => {
+        println("wc: \{file}: meet a error when read file")
+        return None
+      }
+    } noraise {
+      s => Some(s)
+    }
+  } else {
+    None
+  }
+
+  Some(
+    word_count(
+      content,
+      bytes,
+      line~,
+      word~,
+      char=char_count,
+      byte~,
+      max_line_length~,
+    ),
+  )
+}
+
+///|
+fn wc_command() -> @argparse.Command {
+  @argparse.Command(
+    "wc",
+    about="Print newline, word, and byte counts for each FILE, and a total line if more than one FILE is specified.",
+    version="wc 0.1.0",
+    flags=[
+      @argparse.FlagArg("lines", short='l', about="print the newline counts"),
+      @argparse.FlagArg("words", short='w', about="print the word counts"),
+      @argparse.FlagArg("chars", short='m', about="print the character counts"),
+      @argparse.FlagArg("bytes", short='c', about="print the byte counts"),
+      @argparse.FlagArg(
+        "max-line-length",
+        short='L',
+        about="print the maximum display width",
       ),
-      ("-h", "--help", Set(help_flag), "display this help and exit"),
-      (
-        "-v",
-        "--version",
-        Set(version_flag),
-        "output version information and exit",
+      @argparse.FlagArg(
+        "version",
+        short='v',
+        long="version",
+        about="output version information and exit",
+        action=@argparse.Version,
       ),
     ],
-    fn { file => files.push(file) },
-    usage,
-    args,
+    positionals=[
+      @argparse.PositionArg(
+        "file",
+        about="FILE",
+        num_args=@argparse.ValueRange(lower=0),
+      ),
+    ],
+    disable_version_flag=true,
   )
-  let (char, max_line_length) = (char_ref.val, max_line_length_ref.val)
-  let mut line = line_ref.val
-  let mut word = word_ref.val
-  let mut byte = byte_ref.val
+}
 
+///|
+fn flag_is_set(matches : @argparse.Matches, name : String) -> Bool {
+  matches.flags.get(name).unwrap_or(false)
+}
 
-  if help_flag.val {
-    println(usage)
-    return
+///|
+fn positional_values(
+  matches : @argparse.Matches,
+  name : String,
+) -> Array[String] {
+  match matches.values.get(name) {
+    Some(values) => values
+    None => []
   }
-  if version_flag.val {
-    println("wc 0.1.0")
-    return
+}
+
+///|
+fn main {
+  let cmd = wc_command()
+  let matches = try cmd.parse() catch {
+    err => {
+      println(err.to_string())
+      return
+    }
+  } noraise {
+    matches => matches
   }
-  if not(line || word || byte || char || max_line_length) {
+
+  let files = positional_values(matches, "file")
+  let char_count = flag_is_set(matches, "chars")
+  let max_line_length = flag_is_set(matches, "max-line-length")
+  let mut line = flag_is_set(matches, "lines")
+  let mut word = flag_is_set(matches, "words")
+  let mut byte = flag_is_set(matches, "bytes")
+
+  if !(line || word || byte || char_count || max_line_length) {
     line = true
     word = true
     byte = true
   }
 
-  //
   if files.is_empty() {
-    let lines : @queue.T[String] = @queue.new()
-    loop read_line_from_stdin() {
-      None => break
-      Some(line) =>
-        continue {
-            lines.push(line)
-            read_line_from_stdin()
-          }
+    let lines : @queue.Queue[String] = @queue.new()
+    while true {
+      match read_line_from_stdin() {
+        None => break
+        Some(line) => lines.push(line)
+      }
     }
-    let content = @string.concat(lines.iter().collect(), separator="")
+    let content = lines.iter().to_array().join("")
     let stats = word_count(
       content,
-      if byte {Some(content.to_bytes())} else {None},
+      if byte {
+        Some(@utf8.encode(content))
+      } else {
+        None
+      },
       line~,
       word~,
-      char~,
+      char=char_count,
       byte~,
       max_line_length~,
     )
@@ -298,7 +345,7 @@ fn main {
       } else {
         None
       },
-      characters: if char {
+      characters: if char_count {
         Some(0)
       } else {
         None
@@ -309,54 +356,25 @@ fn main {
         None
       },
     }
-    let list = @queue.new()
-    files
-    .iter()
-    .each(
-      fn(file) {
-        if not(@fs.path_exists(path=file)) {
-          println("wc: \{file}: No such file or directory")
-          return
+    let list : @queue.Queue[(Stats, String)] = @queue.new()
+    for file in files {
+      match count_file(file, line, word, char_count, byte, max_line_length) {
+        Some(stats) => {
+          total_stats = total_stats.add(stats)
+          list.push((stats, file))
         }
-        let content = match @fs.read_file_to_string?(path=file) {
-          Ok(s) => s
-          Err(_) => {
-            println("wc: \{file}: meet a error when read file")
-            return
-          }
-        }
+        None => ()
+      }
+    }
 
-        let bytes = if byte {
-           match @fs.read_file_to_bytes?(path=file) {
-            Ok(s) => Some(s)
-            Err(_) => {
-              println("wc: \{file}: meet a error when read file")
-              return
-            }
-          }
-        } else {
-          None
-        }
-        let stats = word_count(
-          content,
-          bytes,
-          line~,
-          word~,
-          char~,
-          byte~,
-          max_line_length~,
-        )
-        total_stats += stats
-        list.push((stats, file))
-      },
-    )
-    if list.length() == 1 { // 不需要打印total
-      let (stat, file) = list.pop().unwrap()
-      println(" \{stat.to_string()} \{file}")
+    if list.length() == 1 {
+      match list.pop() {
+        Some((stat, file)) => println(" \{stat.to_string()} \{file}")
+        None => ()
+      }
     } else {
       list.push((total_stats, "total"))
       print_stats(list, total_stats)
     }
-    
   }
 }
