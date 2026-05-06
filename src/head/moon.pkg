@@ -4,6 +4,8 @@ import {
   "moonbitlang/x/fs",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
 )
