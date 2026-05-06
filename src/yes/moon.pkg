@@ -2,6 +2,8 @@ import {
   "moonbitlang/x/sys",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
 )
