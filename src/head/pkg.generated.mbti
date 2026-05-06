@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "five-nuts/coreutils/head"
+
+// Values
+
+// Errors
+
+// Types and methods
+type HeadOptions
+
+// Type aliases
+
+// Traits
+

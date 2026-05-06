@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "five-nuts/coreutils/rmdir"
+
+// Values
+
+// Errors
+
+// Types and methods
+type RmdirConfig
+
+// Type aliases
+
+// Traits
+

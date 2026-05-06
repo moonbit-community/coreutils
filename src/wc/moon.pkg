@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/core/argparse",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/queue",
+  "moonbitlang/x/fs",
+}
+
+options(
+  "is-main": true,
+)

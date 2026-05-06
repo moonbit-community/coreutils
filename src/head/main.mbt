@@ -1,13 +1,20 @@
+///|
 struct HeadOptions {
   mut file : String
   mut count : Int
   mut by_chars : Bool
 }
 
+///|
 fn min(a : Int, b : Int) -> Int {
-  if a < b { a } else { b }
+  if a < b {
+    a
+  } else {
+    b
+  }
 }
 
+///|
 fn print_usage() -> Unit {
   println("Usage:")
   println("  head [-c number|-n number] [file...]")
@@ -17,19 +24,16 @@ fn print_usage() -> Unit {
   println("  -n number show last N lines")
 }
 
+///|
 fn parse_number(arg : String) -> Result[Int, String] {
   try @string.parse_int(arg, base=10) catch {
     _ => Err("Invalid number format")
   } noraise {
-    n =>
-      if n <= 0 {
-        Err("Number must be non-negative")
-      } else {
-        Ok(n)
-      }
+    n => if n <= 0 { Err("Number must be non-negative") } else { Ok(n) }
   }
 }
 
+///|
 fn parse_args(args : Array[String]) -> Result[HeadOptions, String] {
   if args.length() < 1 {
     return Err("No arguments provided")
@@ -87,6 +91,7 @@ fn parse_args(args : Array[String]) -> Result[HeadOptions, String] {
   Ok(options)
 }
 
+///|
 fn take_chars(content : String, count : Int) -> String {
   if count <= 0 {
     return ""
@@ -97,6 +102,7 @@ fn take_chars(content : String, count : Int) -> String {
   }
 }
 
+///|
 fn head(file : String, by_chars : Bool, count : Int) -> Unit raise {
   let file_content = @fs.read_file_to_string(file)
   if by_chars {
@@ -110,6 +116,7 @@ fn head(file : String, by_chars : Bool, count : Int) -> Unit raise {
   }
 }
 
+///|
 test "take_chars preserves non-BMP character boundaries" {
   let content = "a😀b"
   inspect(take_chars(content, 2), content="a😀")
@@ -139,17 +146,17 @@ fn main {
       if file_exists {
         try head(options.file, options.by_chars, options.count) catch {
           _ => {
-              println("Error: failed to read " + options.file)
-              println("")
-              print_usage()
-            }
+            println("Error: failed to read " + options.file)
+            println("")
+            print_usage()
+          }
         } noraise {
           _ => ()
         }
       } else {
-          println("Error: " + options.file + " does not exist")
-          println("")
-          print_usage()
+        println("Error: " + options.file + " does not exist")
+        println("")
+        print_usage()
       }
     }
     Err(e) => {

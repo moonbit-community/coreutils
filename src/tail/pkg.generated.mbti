@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "five-nuts/coreutils/tail"
+
+// Values
+
+// Errors
+
+// Types and methods
+type TailOptions
+
+// Type aliases
+
+// Traits
+
