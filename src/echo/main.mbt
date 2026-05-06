@@ -1,3 +1,4 @@
+///|
 fn parse_special_char(s : String) -> String {
   let chars = s.to_array()
   let mut result = ""
@@ -45,8 +46,10 @@ fn parse_special_char(s : String) -> String {
         '0' => {
           let mut octal_num = ""
           let mut j = i + 2
-          while j < chars.length() && j < i + 5 && chars[j] >= '0' &&
-            chars[j] <= '7' {
+          while j < chars.length() &&
+                j < i + 5 &&
+                chars[j] >= '0' &&
+                chars[j] <= '7' {
             octal_num = octal_num + chars[j].to_string()
             j = j + 1
           }

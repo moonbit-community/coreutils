@@ -1,3 +1,4 @@
+///|
 struct TailOptions {
   mut file : String
   mut follow : Bool
@@ -6,10 +7,16 @@ struct TailOptions {
   mut by_chars : Bool
 }
 
+///|
 fn max(a : Int, b : Int) -> Int {
-  if a > b { a } else { b }
+  if a > b {
+    a
+  } else {
+    b
+  }
 }
 
+///|
 fn print_usage() -> Unit {
   println("Usage:")
   println("  tail [-f] [-c number|-n number] [file]")
@@ -22,19 +29,16 @@ fn print_usage() -> Unit {
   println("  -r        reverse output")
 }
 
+///|
 fn parse_number(arg : String) -> Result[Int, String] {
   try @string.parse_int(arg, base=10) catch {
     _ => Err("Invalid number format")
   } noraise {
-    n =>
-      if n <= 0 {
-        Err("Number must be non-negative")
-      } else {
-        Ok(n)
-      }
+    n => if n <= 0 { Err("Number must be non-negative") } else { Ok(n) }
   }
 }
 
+///|
 fn parse_args(args : Array[String]) -> Result[TailOptions, String] {
   if args.length() < 1 {
     return Err("No arguments provided")
@@ -135,10 +139,12 @@ fn parse_args(args : Array[String]) -> Result[TailOptions, String] {
   Ok(options)
 }
 
+///|
 fn reverse_string(content : String) -> String {
   content.to_array().rev().map(ch => ch.to_string()).join("")
 }
 
+///|
 fn take_last_chars(content : String, count : Int) -> String {
   if count <= 0 {
     return ""
@@ -149,12 +155,13 @@ fn take_last_chars(content : String, count : Int) -> String {
   }
 }
 
+///|
 fn tail(
   file : String,
   reverse : Bool,
   by_chars : Bool,
   count : Int,
-  follow : Bool
+  follow : Bool,
 ) -> Unit raise {
   let file_content = @fs.read_file_to_string(file)
   if by_chars {
@@ -181,6 +188,7 @@ fn tail(
   ignore(follow)
 }
 
+///|
 test "take_last_chars preserves non-BMP character boundaries" {
   let content = "a😀b"
   inspect(take_last_chars(content, 2), content="😀b")
@@ -208,25 +216,27 @@ fn main {
         exists => exists
       }
       if file_exists {
-        try tail(
+        try
+          tail(
             options.file,
             options.reverse,
             options.by_chars,
             options.count,
             options.follow,
-          ) catch {
+          )
+        catch {
           _ => {
-              println("Error: failed to read " + options.file)
-              println("")
-              print_usage()
-            }
+            println("Error: failed to read " + options.file)
+            println("")
+            print_usage()
+          }
         } noraise {
           _ => ()
         }
       } else {
-          println("Error: " + options.file + " does not exist")
-          println("")
-          print_usage()
+        println("Error: " + options.file + " does not exist")
+        println("")
+        print_usage()
       }
     }
     Err(e) => {

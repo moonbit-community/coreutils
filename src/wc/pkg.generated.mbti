@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "five-nuts/coreutils/wc"
+
+// Values
+pub fn read_char() -> Char?
+
+pub fn read_line_from_stdin() -> String?
+
+// Errors
+
+// Types and methods
+type Stats
+
+// Type aliases
+
+// Traits
+
