@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-# Due to https://github.com/moonbitlang/moon/issues/472
-# This is test using `yes` instead of `moon run src/yes`
 
-(yes ||:) | head -n 2 | grep -q 'y$'
+(moon run src/yes -- hello 2>/dev/null || :) | head -n 2 | grep -qx 'hello'
+(moon run src/yes 2>/dev/null || :) | head -n 2 | grep -qx 'y'

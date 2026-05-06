@@ -1,7 +1,11 @@
 struct HeadOptions {
-  mut file: String
-  mut count: Int
-  mut by_chars: Bool
+  mut file : String
+  mut count : Int
+  mut by_chars : Bool
+}
+
+fn min(a : Int, b : Int) -> Int {
+  if a < b { a } else { b }
 }
 
 fn print_usage() -> Unit {
@@ -13,35 +17,28 @@ fn print_usage() -> Unit {
   println("  -n number show last N lines")
 }
 
-fn parse_number(arg: String) -> Result[Int, String] {
-  match @strconv.parse_int?(arg, base = 10) {
-    Ok(n) => {
+fn parse_number(arg : String) -> Result[Int, String] {
+  try @string.parse_int(arg, base=10) catch {
+    _ => Err("Invalid number format")
+  } noraise {
+    n =>
       if n <= 0 {
-        return Err("Number must be non-negative")
-      }else{
-        return Ok(n)
+        Err("Number must be non-negative")
+      } else {
+        Ok(n)
       }
-    }
-    Err(_) => Err("Invalid number format")
   }
-
-  
 }
 
-fn parse_args(args: Array[String]) -> Result[HeadOptions, String] {
+fn parse_args(args : Array[String]) -> Result[HeadOptions, String] {
   if args.length() < 1 {
     return Err("No arguments provided")
   }
 
   let mut i = 0
-  let options : HeadOptions = {
-    file: "",
-    count: 10, // 默认显示10行
-    by_chars: false
-  }
+  let options : HeadOptions = { file: "", count: 10, by_chars: false }
   let mut number_set = false
 
-  // 正常模式解析
   while i < args.length() {
     match args[i] {
       "-c" => {
@@ -53,13 +50,9 @@ fn parse_args(args: Array[String]) -> Result[HeadOptions, String] {
         }
         match parse_number(args[i + 1]) {
           Ok(n) => {
-            if n <= 0 {
-              return Err("Number must be non-negative")
-            }else{
-              options.count = n
-              options.by_chars = true
-              number_set = true
-            }
+            options.count = n
+            options.by_chars = true
+            number_set = true
           }
           Err(e) => return Err(e)
         }
@@ -74,19 +67,13 @@ fn parse_args(args: Array[String]) -> Result[HeadOptions, String] {
         }
         match parse_number(args[i + 1]) {
           Ok(n) => {
-            if n <= 0 {
-              return Err("Number must be non-negative")
-            }else{
-              options.count = n
-              number_set = true
-            }
+            options.count = n
+            number_set = true
           }
           Err(e) => return Err(e)
         }
         i = i + 2
       }
-      //arg if arg.starts_with("-") =>
-      //  return Err("Invalid option: " + arg)
       _ => {
         if options.file != "" {
           return Err("Multiple files specified")
@@ -94,60 +81,75 @@ fn parse_args(args: Array[String]) -> Result[HeadOptions, String] {
         options.file = args[i]
         i = i + 1
       }
-    }   
+    }
   }
 
   Ok(options)
 }
 
-fn head!(file: String, by_chars: Bool, count: Int) -> Unit {
-  let file_content = @fs.read_file_to_string!(path = file)
-  
-  if by_chars {
-    // 按字符读取
-    let content_length = file_content.length()
-    let end_index = @math.minimum(count, content_length)
-    let content_slice = file_content.substring(start = 0, end = end_index)
-    
-    println(content_slice)
-  } else {
-    // 按行读取
-    let file_lines = file_content.split("\n").to_array()
-    let end_index = @math.minimum(count, file_lines.length())
-    let (content_slice, _) = file_lines.split_at(end_index)
-
-    for line in content_slice {println(line)}
+fn take_chars(content : String, count : Int) -> String {
+  if count <= 0 {
+    return ""
+  }
+  match content.offset_of_nth_char(count) {
+    Some(end_index) => content[:end_index].to_owned()
+    None => content
   }
 }
 
+fn head(file : String, by_chars : Bool, count : Int) -> Unit raise {
+  let file_content = @fs.read_file_to_string(file)
+  if by_chars {
+    println(take_chars(file_content, count))
+  } else {
+    let file_lines = file_content.split("\n").to_array()
+    let end_index = min(count, file_lines.length())
+    for line in file_lines[:end_index] {
+      println(line)
+    }
+  }
+}
 
-// 使用示例
+test "take_chars preserves non-BMP character boundaries" {
+  let content = "a😀b"
+  inspect(take_chars(content, 2), content="a😀")
+  inspect(take_chars(content, 3), content="a😀b")
+}
+
+///|
+fn user_args() -> Array[String] {
+  let raw_args = @sys.get_cli_args()
+  if raw_args.length() > 0 {
+    raw_args[1:].to_owned()
+  } else {
+    []
+  }
+}
+
+///|
 fn main {
-  let args = @sys.get_cli_args()
-
-  //test
-  //for arg in args {println("DEBUG: arg: " + arg)}
-  //let args = ["-n", "10", "example.txt"]
-  //let args = ["-c", "10", "example.txt"]
-  
+  let args = user_args()
   match parse_args(args) {
     Ok(options) => {
-      // 这里使用解析后的选项执行tail操作
-      // println("Parsed options:")
-      // println("  file: " + options.file)
-      // println("  count: " + options.count.to_string())
-      // println("  by_chars: " + options.by_chars.to_string())
-
-      let file_exists = @fs.is_file?(path = options.file) 
-      match file_exists {
-        Ok(true) => {
-          let _ = head?(options.file, options.by_chars, options.count)
+      let file_exists = try @fs.is_file(options.file) catch {
+        _ => false
+      } noraise {
+        exists => exists
+      }
+      if file_exists {
+        try head(options.file, options.by_chars, options.count) catch {
+          _ => {
+              println("Error: failed to read " + options.file)
+              println("")
+              print_usage()
+            }
+        } noraise {
+          _ => ()
         }
-        _ => {
+      } else {
           println("Error: " + options.file + " does not exist")
           println("")
           print_usage()
-        }
       }
     }
     Err(e) => {
