@@ -89,7 +89,7 @@ fn print_stats(
   list.each(fn(item : (Stats, String)) {
     let (stats, file) = item
     let strings = stats.to_strings()
-    let output : @queue.Queue[String] = @queue.new()
+    let output : @queue.Queue[String] = @queue.Queue([])
     let mut i = 0
     while i < fix_length.length() {
       if fix_length[i] > 0 && strings[i].length() > 0 {
@@ -306,7 +306,7 @@ fn main {
   }
 
   if files.is_empty() {
-    let lines : @queue.Queue[String] = @queue.new()
+    let lines : @queue.Queue[String] = @queue.Queue([])
     while true {
       match read_line_from_stdin() {
         None => break
@@ -356,7 +356,7 @@ fn main {
         None
       },
     }
-    let list : @queue.Queue[(Stats, String)] = @queue.new()
+    let list : @queue.Queue[(Stats, String)] = @queue.Queue([])
     for file in files {
       match count_file(file, line, word, char_count, byte, max_line_length) {
         Some(stats) => {
