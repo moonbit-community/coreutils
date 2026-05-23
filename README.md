@@ -32,7 +32,7 @@ count below and mark it as done in this README.md. Thanks!
 
 Commit message should follow [conventional commits](https://www.conventionalcommits.org/)
 
-## Completed (6/109)
+## Completed (8/109)
 
 |  Done   | Cmd       | Descripton                                       |
 | :-----: | --------- | ------------------------------------------------ |
@@ -43,7 +43,7 @@ Commit message should follow [conventional commits](https://www.conventionalcomm
 |         | base64    | Transform data into printable data               |
 |         | basename  | Strip directory and suffix from a file name      |
 |         | basenc    | Transform data into printable data               |
-|         | cat       | Concatenate and write files                      |
+| &check; | cat       | Concatenate and write files                      |
 |         | chcon     | Change SELinux context of file                   |
 |         | chgrp     | Change group ownership                           |
 |         | chmod     | Change access permissions                        |
@@ -141,7 +141,7 @@ Commit message should follow [conventional commits](https://www.conventionalcomm
 |         | uptime    | Print system uptime and load                     |
 |         | users     | Print login names of users currently logged in   |
 |         | vdir      | Verbosely list directory contents                |
-|         | wc        | Print newline, word, and byte counts             |
+| &check; | wc        | Print newline, word, and byte counts             |
 |         | who       | Print who is currently logged in                 |
 |         | whoami    | Print effective user ID                          |
 | &check; | yes       | Print a string until interrupted                 |
