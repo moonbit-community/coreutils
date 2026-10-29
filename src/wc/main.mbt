@@ -1,5 +1,5 @@
 ///|
-fn char_from_int(val : Int) -> Char? = "%char_from_int"
+fn char_from_int(val : Int32) -> Char? = "%char_from_int"
 
 ///|
 pub fn read_char() -> Char? {
@@ -8,31 +8,44 @@ pub fn read_char() -> Char? {
 
 ///|
 pub fn read_line_from_stdin() -> String? {
-  let buf = @buffer.new()
-  while true {
-    match read_char() {
-      None =>
-        match buf.to_string() {
-          "" => return None
-          s => return Some(s)
-        }
-      Some('\n') => {
-        buf.write_char('\n')
-        break
-      }
-      Some(c) => buf.write_char(c)
+  let bytes = Buffer()
+  for ;; {
+    let byte = __read_char()
+    if byte < 0 {
+      break
+    }
+    bytes.write_byte(byte.to_byte())
+    if byte == 10 {
+      break
     }
   }
-  Some(buf.to_string())
+  if bytes.is_empty() {
+    None
+  } else {
+    Some(@utf8.decode_lossy(bytes.to_bytes()))
+  }
+}
+
+///|
+fn read_stdin_bytes() -> Bytes {
+  let bytes = Buffer()
+  for ;; {
+    let byte = __read_char()
+    if byte < 0 {
+      break
+    }
+    bytes.write_byte(byte.to_byte())
+  }
+  bytes.to_bytes()
 }
 
 ///|
 struct Stats {
-  lines : Int?
-  words : Int?
-  characters : Int?
-  bytes : Int?
-  max_line_length : Int?
+  lines : Int32?
+  words : Int32?
+  characters : Int32?
+  bytes : Int32?
+  max_line_length : Int32?
 }
 
 ///|
@@ -111,7 +124,7 @@ fn print_stats(
 
 ///|
 fn Stats::add(self : Stats, other : Stats) -> Stats {
-  fn option_add(x : Int?, y : Int?) -> Int? {
+  fn option_add(x : Int32?, y : Int32?) -> Int32? {
     match (x, y) {
       (None, _) => y
       (_, None) => x
@@ -119,7 +132,7 @@ fn Stats::add(self : Stats, other : Stats) -> Stats {
     }
   }
 
-  fn option_max(x : Int?, y : Int?) -> Int? {
+  fn option_max(x : Int32?, y : Int32?) -> Int32? {
     match (x, y) {
       (None, _) => y
       (_, None) => x
@@ -146,19 +159,27 @@ fn word_count(
   byte~ : Bool,
   max_line_length~ : Bool,
 ) -> Stats {
-  let lines = if line { Some(content.split("\n").count()) } else { None }
-  let words = if word {
-    Some(
-      content
-      .replace_all(old="\n", new=" ")
-      .split(" ")
-      .filter(s => s.length() > 0)
-      .count(),
-    )
+  let lines = if line {
+    Some(content.iter().filter(c => c == '\n').count())
   } else {
     None
   }
-  let characters = if char { Some(content.length()) } else { None }
+  let words = if word {
+    let mut count = 0
+    let mut in_word = false
+    for c in content {
+      if c.is_whitespace() {
+        in_word = false
+      } else if !in_word {
+        count += 1
+        in_word = true
+      }
+    }
+    Some(count)
+  } else {
+    None
+  }
+  let characters = if char { Some(content.iter().count()) } else { None }
   let bytes = if byte {
     match file_bytes {
       Some(bytes) => Some(bytes.length())
@@ -172,12 +193,12 @@ fn word_count(
       content
       .split("\n")
       .map(line => line.length())
-      .fold(fn(a : Int, b : Int) { if a > b { a } else { b } }, init=0),
+      .fold(fn(a : Int32, b : Int32) { if a > b { a } else { b } }, init=0),
     )
   } else {
     None
   }
-  { lines, words, characters, bytes, max_line_length }
+  { lines, words, characters, bytes, max_line_length, }
 }
 
 ///|
@@ -306,21 +327,11 @@ fn main {
   }
 
   if files.is_empty() {
-    let lines : @queue.Queue[String] = @queue.Queue([])
-    while true {
-      match read_line_from_stdin() {
-        None => break
-        Some(line) => lines.push(line)
-      }
-    }
-    let content = lines.iter().to_array().join("")
+    let bytes = read_stdin_bytes()
+    let content = @utf8.decode_lossy(bytes)
     let stats = word_count(
       content,
-      if byte {
-        Some(@utf8.encode(content))
-      } else {
-        None
-      },
+      Some(bytes),
       line~,
       word~,
       char=char_count,

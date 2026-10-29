@@ -1,2 +1,2 @@
 ///|
-extern "c" fn __read_char() -> Int = "getchar"
+extern "c" fn __read_char() -> Int32 = "getchar"

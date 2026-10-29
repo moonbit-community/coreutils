@@ -84,7 +84,7 @@ fn parse_special_char(s : String) -> String {
 
 ///|
 fn user_args() -> Array[String] {
-  let raw_args = @sys.get_cli_args()
+  let raw_args = @env.args()
   if raw_args.length() > 0 {
     raw_args[1:].to_owned()
   } else {

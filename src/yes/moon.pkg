@@ -1,9 +1,7 @@
 import {
-  "moonbitlang/x/sys",
+  "moonbitlang/core/env",
 }
 
 supported_targets = "native"
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")
