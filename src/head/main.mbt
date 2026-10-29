@@ -1,12 +1,12 @@
 ///|
 struct HeadOptions {
   mut file : String
-  mut count : Int
+  mut count : Int32
   mut by_chars : Bool
 }
 
 ///|
-fn min(a : Int, b : Int) -> Int {
+fn min(a : Int32, b : Int32) -> Int32 {
   if a < b {
     a
   } else {
@@ -25,7 +25,7 @@ fn print_usage() -> Unit {
 }
 
 ///|
-fn parse_number(arg : String) -> Result[Int, String] {
+fn parse_number(arg : String) -> Result[Int32, String] {
   try @string.parse_int(arg, base=10) catch {
     _ => Err("Invalid number format")
   } noraise {
@@ -40,7 +40,7 @@ fn parse_args(args : Array[String]) -> Result[HeadOptions, String] {
   }
 
   let mut i = 0
-  let options : HeadOptions = { file: "", count: 10, by_chars: false }
+  let options : HeadOptions = { file: "", count: 10, by_chars: false, }
   let mut number_set = false
 
   while i < args.length() {
@@ -92,7 +92,7 @@ fn parse_args(args : Array[String]) -> Result[HeadOptions, String] {
 }
 
 ///|
-fn take_chars(content : String, count : Int) -> String {
+fn take_chars(content : String, count : Int32) -> String {
   if count <= 0 {
     return ""
   }
@@ -103,7 +103,7 @@ fn take_chars(content : String, count : Int) -> String {
 }
 
 ///|
-fn head(file : String, by_chars : Bool, count : Int) -> Unit raise {
+fn head(file : String, by_chars : Bool, count : Int32) -> Unit raise {
   let file_content = @fs.read_file_to_string(file)
   if by_chars {
     println(take_chars(file_content, count))
@@ -125,7 +125,7 @@ test "take_chars preserves non-BMP character boundaries" {
 
 ///|
 fn user_args() -> Array[String] {
-  let raw_args = @sys.get_cli_args()
+  let raw_args = @env.args()
   if raw_args.length() > 0 {
     raw_args[1:].to_owned()
   } else {

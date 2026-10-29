@@ -3,12 +3,12 @@ struct TailOptions {
   mut file : String
   mut follow : Bool
   mut reverse : Bool
-  mut count : Int
+  mut count : Int32
   mut by_chars : Bool
 }
 
 ///|
-fn max(a : Int, b : Int) -> Int {
+fn max(a : Int32, b : Int32) -> Int32 {
   if a > b {
     a
   } else {
@@ -30,7 +30,7 @@ fn print_usage() -> Unit {
 }
 
 ///|
-fn parse_number(arg : String) -> Result[Int, String] {
+fn parse_number(arg : String) -> Result[Int32, String] {
   try @string.parse_int(arg, base=10) catch {
     _ => Err("Invalid number format")
   } noraise {
@@ -145,7 +145,7 @@ fn reverse_string(content : String) -> String {
 }
 
 ///|
-fn take_last_chars(content : String, count : Int) -> String {
+fn take_last_chars(content : String, count : Int32) -> String {
   if count <= 0 {
     return ""
   }
@@ -160,7 +160,7 @@ fn tail(
   file : String,
   reverse : Bool,
   by_chars : Bool,
-  count : Int,
+  count : Int32,
   follow : Bool,
 ) -> Unit raise {
   let file_content = @fs.read_file_to_string(file)
@@ -197,7 +197,7 @@ test "take_last_chars preserves non-BMP character boundaries" {
 
 ///|
 fn user_args() -> Array[String] {
-  let raw_args = @sys.get_cli_args()
+  let raw_args = @env.args()
   if raw_args.length() > 0 {
     raw_args[1:].to_owned()
   } else {

@@ -1,11 +1,8 @@
 import {
   "moonbitlang/core/argparse",
-  "moonbitlang/core/queue",
   "moonbitlang/x/fs",
 }
 
 supported_targets = "native"
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")
